@@ -5,9 +5,9 @@ from catalog.views import AuthorViewSet, BookViewSet
 from operations.views import BorrowRecordViewSet
 
 router = DefaultRouter()
-router.register('authors', AuthorViewSet)
-router.register('books', BookViewSet)
-router.register('borrow', BorrowRecordViewSet)
+router.register('authors', AuthorViewSet,basename='authors')
+router.register('books', BookViewSet,basename='books')
+router.register('borrow', BorrowRecordViewSet, basename='borrow')
 
 urlpatterns = [
   
