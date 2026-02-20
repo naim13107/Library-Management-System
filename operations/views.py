@@ -12,12 +12,6 @@ class BorrowRecordViewSet(viewsets.ModelViewSet):
     queryset = BorrowRecord.objects.all()
     serializer_class = BorrowRecordSerializer
     
-    def get_permissions(self):
-        
-        if self.action == 'destroy':
-            return [IsAdminUser()] 
-        return [IsAuthenticated()] 
-
     def perform_create(self, serializer):
         record = serializer.save(member=self.request.user) 
         record.book.is_available = False
