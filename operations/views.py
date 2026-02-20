@@ -1,16 +1,35 @@
-# operations/views.py
 from rest_framework import viewsets, status
 from rest_framework.response import Response
 from rest_framework.decorators import action
-# Import IsAdminUser to check for staff/superuser status
 from rest_framework.permissions import IsAuthenticated, IsAdminUser 
 from django.utils import timezone
 from .models import BorrowRecord
 from .serializers import BorrowRecordSerializer
+from catalog.pagination import DefaultPagination
 
 class BorrowRecordViewSet(viewsets.ModelViewSet):
-    queryset = BorrowRecord.objects.all()
+    """
+    API endpoint for managing book borrowing records.
+    
+    * Authenticated users can create a borrow record (checkout a book).
+    * Normal users can only view their own borrow history.
+    * Admin users can view all borrow records and delete records.
+    """
+    
     serializer_class = BorrowRecordSerializer
+    pagination_class = DefaultPagination
+    
+    def get_permissions(self):
+        
+        if self.action == 'destroy':
+            return [IsAdminUser()] 
+        return [IsAuthenticated()] 
+
+    def get_queryset(self):
+        user = self.request.user
+        if user.is_staff:
+            return BorrowRecord.objects.all()
+        return BorrowRecord.objects.filter(member=user)
     
     def perform_create(self, serializer):
         record = serializer.save(member=self.request.user) 
@@ -25,6 +44,12 @@ class BorrowRecordViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=['post','get'])
     def return_book(self, request, pk=None):
+        """
+        Custom endpoint to mark a borrowed book as returned.
+        
+        Sets the return_date to the current timestamp and updates 
+        the associated book's availability status to True.
+        """
         record = self.get_object()
         
         if record.member != request.user and not request.user.is_staff:
